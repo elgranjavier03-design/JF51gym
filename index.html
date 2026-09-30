@@ -440,12 +440,18 @@ function genSync(){
   });
   return t;
 }
-function vSync(){
+function genSyncUrl(){
   const code=genSync();
+  const b64=btoa(unescape(encodeURIComponent(code)));
+  const base=location.origin+location.pathname;
+  return base+"?sync="+encodeURIComponent(b64);
+}
+function vSync(){
+  const url=genSyncUrl();
   let h='<div class="panel"><div class="panel-h"><h2>Sincronización</h2><div class="meta">para Claude</div></div></div>';
-  h+='<div class="note" style="margin-bottom:10px">Genera un resumen de tu progreso. Cópialo y pégalo en el chat donde venimos hablando para que lo analice.</div>';
-  h+='<textarea id="syncBox" readonly rows="8" style="width:100%;background:#0D1820;color:var(--bone);border:1px solid var(--line);font-family:\'IBM Plex Mono\',monospace;font-size:11px;padding:8px">'+code+'</textarea>';
-  h+='<button class="btn sec" id="copySync" style="margin-top:10px">Copiar código</button>';
+  h+='<div class="note" style="margin-bottom:10px">Copia este enlace y pégalo en el chat donde venimos hablando — trae adentro el resumen de tu progreso.</div>';
+  h+='<input id="syncBox" readonly value="'+url.replace(/"/g,"&quot;")+'" style="width:100%;background:#0D1820;color:var(--bone);border:1px solid var(--line);border-radius:6px;font-family:\'IBM Plex Mono\',monospace;font-size:11px;padding:10px;box-sizing:border-box">';
+  h+='<button class="btn sec" id="copySync" style="margin-top:10px">Copiar enlace</button>';
   return h;
 }
 function vMetricas(){
