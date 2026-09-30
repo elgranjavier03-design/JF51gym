@@ -34,7 +34,8 @@ header{border-bottom:1px solid var(--line);background:linear-gradient(180deg,#13
 .seg.on{background:var(--amber)} .seg.on.hot{background:var(--ember)}
 .ticks{display:flex;justify-content:space-between;font-family:"IBM Plex Mono",monospace;font-size:8.5px;color:#547083;margin-top:4px;letter-spacing:.1em}
 
-nav{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:16px}
+nav{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto}
+nav button{flex:0 0 auto;white-space:nowrap}
 nav button{flex:1;background:none;border:0;border-bottom:2px solid transparent;color:var(--dim);font-family:"Barlow Condensed",sans-serif;font-size:12.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:11px 2px;cursor:pointer}
 nav button.on{color:var(--bone);border-bottom-color:var(--amber)}
 
@@ -158,6 +159,7 @@ tr:last-child td{border-bottom:0}
     <button data-tab="historial">Historial</button>
     <button data-tab="metricas">Métricas</button>
     <button data-tab="rituales">Rituales</button>
+    <button data-tab="sync">Sync</button>
   </nav>
   <main id="view"></main>
 </div>
@@ -340,7 +342,7 @@ function barraSemana(){
   return h+'</div></div>';
 }
 function view(){
-  const cuerpo=tab==="hoy"?vHoy():tab==="plan"?vPlan():tab==="historial"?vHistorial():tab==="metricas"?vMetricas():vRituales();
+  const cuerpo=tab==="hoy"?vHoy():tab==="plan"?vPlan():tab==="historial"?vHistorial():tab==="metricas"?vMetricas():tab==="sync"?vSync():vRituales();
   if(!window.__loadFailed) return cuerpo;
   return '<div class="note" style="border-left-color:var(--ember);color:#F0B08F"><b>⚠ No se pudo cargar el guardado automático.</b> Si ya tienes un código de respaldo, pégalo en Rituales → Respaldo manual. Si es tu primera vez abriendo la app, ignora esto.</div>'+cuerpo;
 }
@@ -421,6 +423,31 @@ function vHistorial(){
     else h+='<li><span>Sin detalle de ejercicios registrado</span></li>';
     h+='</ol></details>';
   });
+  return h;
+}
+function genSync(){
+  const ss=S.sessions.slice(-6).reverse();
+  const ms=[{fecha:BASE.fecha,peso:BASE.peso,cintura:BASE.cintura},...S.metrics].sort((a,b)=>a.fecha<b.fecha?-1:1);
+  const m=ms[ms.length-1];
+  const nv=nivel(total());
+  let t="PROYECTO52 SYNC "+fmt(hoy())+"\n";
+  t+="Nivel "+nv.cur[0]+" ("+total().toLocaleString("es")+" pts) · racha "+racha()+"d\n";
+  t+="Peso "+m.peso+"kg (obj "+OBJ.peso+") · Cintura "+m.cintura+"cm (obj "+OBJ.cintura+")\n";
+  t+="Últimas "+ss.length+" sesiones:\n";
+  ss.forEach(s=>{
+    const p=PLAN.find(x=>x.id===s.dia);
+    t+="- "+fmt(s.fecha)+" "+(p?p.tag:s.dia)+" "+s.hechos+"/"+s.totalEx+" "+tonSesion(s).toLocaleString("es")+"kg"+(s.subidas?" +"+s.subidas+"prog":"")+"\n";
+  });
+  return t;
+}
+function vSync(){
+  const code=genSync();
+  const url="https://claude.ai/new?q="+encodeURIComponent("Este es el resumen de mi Proyecto 52, dame tu análisis y recomendaciones:\n\n"+code);
+  let h='<div class="panel"><div class="panel-h"><h2>Sincronización</h2><div class="meta">para Claude</div></div></div>';
+  h+='<div class="note" style="margin-bottom:10px">Genera un resumen de tu progreso para que Claude lo analice. "Abrir en Claude" intenta iniciar una conversación nueva ya con el texto listo — no es una función oficial de Anthropic, así que revisa que cargue bien antes de enviarlo. Si no abre, copia el código y pégalo tú en el chat donde venimos hablando (así mantengo el contexto de tu plan).</div>';
+  h+='<textarea id="syncBox" readonly rows="8" style="width:100%;background:#0D1820;color:var(--bone);border:1px solid var(--line);font-family:\'IBM Plex Mono\',monospace;font-size:11px;padding:8px">'+code+'</textarea>';
+  h+='<button class="btn sec" id="copySync" style="margin-top:10px">Copiar código</button>';
+  h+='<a class="btn" id="openClaude" href="'+url+'" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:10px;text-decoration:none;box-sizing:border-box">Abrir en Claude (nueva conversación)</a>';
   return h;
 }
 function vMetricas(){
@@ -541,6 +568,13 @@ function bind(){
     const v=document.getElementById("impCode").value;
     if(!v.trim()){toast("Pega el código primero");return;}
     importCode(v);
+  };
+  const cs=document.getElementById("copySync"); if(cs) cs.onclick=()=>{
+    const box=document.getElementById("syncBox");
+    box.focus(); box.select();
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(box.value).then(()=>toast("Copiado al portapapeles")).catch(()=>toast("Selecciona el texto y cópialo"));
+    } else toast("Selecciona el texto y cópialo");
   };
   document.querySelectorAll("[data-hab]").forEach(el=>{
     const go=async()=>{const f=hoy();S.habits[f]=S.habits[f]||{};
