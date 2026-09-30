@@ -273,6 +273,24 @@ function flash(ok){const el=document.getElementById("saved"); if(!el) return;
   el.textContent=ok?"Guardado "+new Date().toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}):"⚠ sin guardar — copia el respaldo al terminar (Rituales)";
 }
 function exportCode(){try{return btoa(unescape(encodeURIComponent(JSON.stringify(S))));}catch(e){return "";}}
+function marcarRespaldo(){try{localStorage.setItem("p52_lastBackup",hoy());}catch(e){}}
+function diasSinRespaldo(){
+  let lb=null; try{lb=localStorage.getItem("p52_lastBackup");}catch(e){}
+  if(!lb) return null;
+  return Math.floor((new Date(hoy())-new Date(lb))/864e5);
+}
+function descargarRespaldo(){
+  const code=exportCode();
+  if(!code){toast("No se pudo generar el respaldo");return;}
+  const blob=new Blob([code],{type:"text/plain"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download="proyecto52-backup-"+hoy()+".txt";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  marcarRespaldo();
+  toast("Respaldo descargado");
+}
 async function importCode(str){
   try{
     const limpio=str.replace(/\s+/g,"");
@@ -351,6 +369,10 @@ function vHoy(){
   const d=PLAN[sel],w=semana(),cfg=SEMANAS[w.n];
   const hechoHoy=S.sessions.filter(s=>s.fecha===hoy()).map(s=>s.dia);
   let h=barraSemana();
+  const dsr=diasSinRespaldo();
+  if((dsr===null&&S.sessions.length>2)||dsr>=7){
+    h+='<div class="note" style="margin-bottom:12px;border-left-color:var(--ember);color:#F0B08F">⚠ '+(dsr===null?"Nunca has descargado un respaldo.":"Van "+dsr+" días sin respaldo.")+' Ve a Rituales → Respaldo manual → "Descargar respaldo" — así no se pierde si borras caché o cambias de dominio.</div>';
+  }
   if(S.sessions.length){
     const ult=S.sessions[S.sessions.length-1], pUlt=PLAN.find(p=>p.id===ult.dia), pSug=PLAN[sugerido];
     h+='<div class="note" style="margin-bottom:12px">Tu última sesión cerrada fue <b>'+pUlt.tag+' · '+pUlt.name+'</b> ('+fmt(ult.fecha)+'). Sigue <b>'+pSug.tag+' · '+pSug.name+'</b>.</div>';
@@ -520,8 +542,9 @@ function vRituales(){
   h+='</div><div class="note"><b>Reglas fijas:</b> domingo en cero · solo viernes y sábado · nunca la noche antes de D3 o D5 · trago servido y contado, nunca botella asignada · un vaso de agua por bebida y cena con proteína antes.<br><br>Registra el mismo día. La memoria del lunes siempre miente a la baja.<br><br><b>Meta al 19 de septiembre:</b> tres fines de semana seguidos por debajo de 24.</div>';
 
   h+='<div class="panel" style="margin-top:14px"><div class="panel-h"><h2>Respaldo manual</h2></div><div class="panel-b">'+
-   '<div class="note" style="margin:0 0 12px">El guardado ahora usa el almacenamiento del propio navegador (localStorage), no el que fallaba antes. Aun así, después de cerrar una sesión importante no está de más generar el código y guardarlo en Notas como respaldo extra.</div>'+
-   '<button class="btn sec" id="expCode">Generar código de respaldo</button>'+
+   '<div class="note" style="margin:0 0 12px">El guardado usa el almacenamiento del navegador (localStorage) — vive solo en este teléfono, en este dominio. Si borras datos del sitio, cambias de navegador o de dominio, se pierde. Descarga el archivo cada tanto y guárdalo en Files/iCloud; es más seguro que solo copiar el texto.</div>'+
+   '<button class="btn" id="descargarBk">Descargar respaldo (archivo)</button>'+
+   '<button class="btn sec" id="expCode" style="margin-top:10px">Generar código de respaldo (texto)</button>'+
    '<textarea id="codeBox" readonly rows="4" style="width:100%;margin-top:8px;background:#0D1820;color:var(--bone);border:1px solid var(--line);font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;padding:8px;display:none"></textarea>'+
    '<div class="mrow" style="margin-top:14px"><label><span>Pegar código para restaurar</span><input type="text" id="impCode" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" placeholder="pega aquí el código"></label></div>'+
    '<button class="btn sec" id="impBtn">Restaurar desde código</button>'+
@@ -564,10 +587,12 @@ function bind(){
   const ec=document.getElementById("expCode"); if(ec) ec.onclick=()=>{
     const box=document.getElementById("codeBox");
     box.value=exportCode(); box.style.display="block"; box.focus(); box.select();
+    marcarRespaldo();
     if(navigator.clipboard&&navigator.clipboard.writeText){
       navigator.clipboard.writeText(box.value).then(()=>toast("Copiado al portapapeles")).catch(()=>toast("Selecciona el texto y cópialo"));
     } else toast("Selecciona el texto y cópialo");
   };
+  const dbk=document.getElementById("descargarBk"); if(dbk) dbk.onclick=descargarRespaldo;
   const ib=document.getElementById("impBtn"); if(ib) ib.onclick=()=>{
     const v=document.getElementById("impCode").value;
     if(!v.trim()){toast("Pega el código primero");return;}
