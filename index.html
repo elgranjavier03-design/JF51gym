@@ -442,12 +442,10 @@ function genSync(){
 }
 function vSync(){
   const code=genSync();
-  const url="https://claude.ai/new?q="+encodeURIComponent("Este es el resumen de mi Proyecto 52, dame tu análisis y recomendaciones:\n\n"+code);
   let h='<div class="panel"><div class="panel-h"><h2>Sincronización</h2><div class="meta">para Claude</div></div></div>';
-  h+='<div class="note" style="margin-bottom:10px">Genera un resumen de tu progreso para que Claude lo analice. "Abrir en Claude" intenta iniciar una conversación nueva ya con el texto listo — no es una función oficial de Anthropic, así que revisa que cargue bien antes de enviarlo. Si no abre, copia el código y pégalo tú en el chat donde venimos hablando (así mantengo el contexto de tu plan).</div>';
+  h+='<div class="note" style="margin-bottom:10px">Genera un resumen de tu progreso. Cópialo y pégalo en el chat donde venimos hablando para que lo analice.</div>';
   h+='<textarea id="syncBox" readonly rows="8" style="width:100%;background:#0D1820;color:var(--bone);border:1px solid var(--line);font-family:\'IBM Plex Mono\',monospace;font-size:11px;padding:8px">'+code+'</textarea>';
   h+='<button class="btn sec" id="copySync" style="margin-top:10px">Copiar código</button>';
-  h+='<a class="btn" id="openClaude" href="'+url+'" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:10px;text-decoration:none;box-sizing:border-box">Abrir en Claude (nueva conversación)</a>';
   return h;
 }
 function vMetricas(){
