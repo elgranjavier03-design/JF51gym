@@ -377,6 +377,15 @@ function vHoy(){
     const ult=S.sessions[S.sessions.length-1], pUlt=PLAN.find(p=>p.id===ult.dia), pSug=PLAN[sugerido];
     h+='<div class="note" style="margin-bottom:12px">Tu última sesión cerrada fue <b>'+pUlt.tag+' · '+pUlt.name+'</b> ('+fmt(ult.fecha)+'). Sigue <b>'+pSug.tag+' · '+pSug.name+'</b>.</div>';
   }
+  if(cfg.deload){
+    h+='<div class="panel" style="margin-bottom:14px;border-color:var(--amber)"><div class="panel-h"><h2>Acondicionamiento (opcional)</h2><div class="meta">solo esta semana</div></div><div class="panel-b">'+
+      '<div class="note" style="margin:0 0 10px">Semana de descarga: hay margen para meter algo de impacto/cardio sin chocar con la fuerza. Ciérralo al final, después de los ejercicios de hoy. No se registra en el progreso — es bonus.</div>'+
+      '<div style="display:grid;gap:8px;font-size:14px">'+
+      '<div>• Saltos al cajón (o step-up explosivo) — 4 × 5</div>'+
+      '<div>• Cuerdas de ataque — 6 rondas · 20s fuerte / 40s suave</div>'+
+      '<div>• Kettlebell swing — 3 × 15</div>'+
+      '</div></div></div>';
+  }
   h+='<div class="days">';
   PLAN.forEach((p,i)=>h+='<div class="day'+(i===sel?" on":"")+(hechoHoy.includes(p.id)?" done":"")+'" data-day="'+i+'"><b>'+p.tag+'</b><span>'+p.name+'</span></div>');
   h+='</div><div class="panel"><div class="panel-h"><h2>'+d.name+'</h2><div class="meta">'+d.sub+'</div></div>';
